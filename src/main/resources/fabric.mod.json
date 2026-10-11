@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "sealbot",
+  "version": "${version}",
+  "name": "SealBot",
+  "description": "Watches chat for regex triggers and replies automatically.",
+  "authors": ["you"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.example.sealbot.SealBot"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

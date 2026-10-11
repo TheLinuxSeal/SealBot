@@ -1,0 +1,51 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Minecraft dev run directory (worlds, configs, logs)
+run/
+runs/
+run-data/
+logs/
+crash-reports/
+
+# Fabric Loom / Forge caches
+.architectury-transformer/
+remappedSrc/
+out/
+bin/
+classes/
+
+# Generated data (remove this line if you commit datagen output)
+src/generated/.cache/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse
+.classpath
+.project
+.settings/
+eclipse/
+
+# VS Code
+.vscode/
+
+# NixOS / direnv
+result
+result-*
+.direnv/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+*.hprof
