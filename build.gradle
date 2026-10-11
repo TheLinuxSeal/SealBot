@@ -9,6 +9,12 @@ base { archivesName = project.mod_id }
 
 repositories {
     mavenCentral()
+
+    // 1. ADD THIS LINE: This gives Gradle access to GitHub-hosted maven projects
+    maven { url = URI.create("https://jitpack.io") }
+
+    // Your existing NeoForge / Mod repositories...
+    maven { url = URI.create("https://maven.neoforged.net/releases") }
 }
 
 java {
@@ -37,6 +43,14 @@ dependencies {
     jarJar(implementation("com.ezylang:EvalEx")) {
         version { strictly '[3.4.0,4)'; prefer '3.4.0' }
     }
+    jarJar("de.kherud:llama:[4.1.0,5.0.0)") {
+        version {
+            prefer "4.1.0"
+        }
+    }
+
+    // 2. Development compile view access
+    implementation "de.kherud:llama:4.1.0"
 }
 
 tasks.withType(JavaCompile).configureEach {

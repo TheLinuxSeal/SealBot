@@ -15,10 +15,16 @@ public class Settings {
         (Matcher m) -> {SealBot.enabled = false; return List.of("Disabled SealBot");}
     );
 
+    public static final FunctionRule ON = new FunctionRule(
+            Permission.ROOT,
+            Pattern.compile("\\bseal\\s+on\\s*$", Pattern.CASE_INSENSITIVE),
+            (Matcher m) -> {SealBot.enabled = true; return List.of("Enabled SealBot");}
+    );
+
     public static final FunctionRule COOLDOWN = new FunctionRule(
             Permission.NORMAL,
             Pattern.compile("\\bseal\\s+cooldown\\s*$", Pattern.CASE_INSENSITIVE),
-            (Matcher m) -> {return List.of("Cooldown is "+SealBot.COOLDOWN_NS);}
+            (Matcher m) -> {return List.of("Public chat: "+SealBot.CHAT_COOLDOWN_NS/1_000_000_000+" seconds, whisper: "+SealBot.WHISPER_COOLDOWN_NS/1_000_000_000+" seconds");}
     );
 
 }

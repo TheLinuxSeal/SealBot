@@ -1,7 +1,7 @@
 package io.github.thelinuxseal.sealbot;
 
 import io.github.thelinuxseal.sealbot.features.*;
-import io.github.thelinuxseal.sealbot.ruletypes.Rule;
+import io.github.thelinuxseal.sealbot.rule.Rule;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
@@ -23,7 +23,8 @@ public class SealBot {
 
     private static final String WHISPER_CMD = "msg";
 
-    public static final long COOLDOWN_NS = 15_000_000_000L;
+    public static final long CHAT_COOLDOWN_NS = 45_000_000_000L;
+    public static final long WHISPER_COOLDOWN_NS = 5_000_000_000L;
 
     public static boolean enabled = true;
 
@@ -32,6 +33,7 @@ public class SealBot {
     // ---- Add your own rules here -------------------------------------------------
     private static final List<Rule> RULES = List.of(
             Settings.OFF,
+            Settings.ON,
 
             Help.HELP,
             Help.HELPSPECIFIC,
@@ -48,13 +50,15 @@ public class SealBot {
             Echo.ECHO,
             Server.PING,
 
+            Chatbot.CHATBOT,
+
             Roller.FLIP,
             Roller.DICE,
             Roller.DDICE,
             Roller.CARD,
 
-            Answer.LIFE,
-            Answer.ARCHBTW
+            Answer.LIFE
+            //Answer.ARCHBTW
     );
     // ------------------------------------------------------------------------------
 
@@ -64,13 +68,14 @@ public class SealBot {
     private static final Pattern PUBLIC_CHAT = Pattern.compile("^<(\\w{1,16})> (.+)$");
     private static final Pattern WHISPER = Pattern.compile("^(\\w{1,16}) whispers to you: (.+)$");
 
-    private static final Map<String, Long> lastSent = new HashMap<>();
+    private static final Map<String, Long> lastChat = new HashMap<>();
+    private static final Map<String, Long> lastWhisper = new HashMap<>();
 
     private static final int TICKS_BETWEEN_MESSAGES = 12;   // ~0.6s, avoids spam kicks
     private static final int MAX_QUEUE = 6;                 // drop extra replies instead of spamming
     private static final int MAX_LEN = 256;                 // Minecraft's chat length limit
 
-    private final Deque<String> outbox = new ArrayDeque<>();
+    private static final Deque<String> outbox = new ArrayDeque<>();
     private int delay = 0;
 
     public SealBot() {
@@ -105,7 +110,6 @@ public class SealBot {
     }
 
     private void handle(String text) {
-        if (!enabled) return;
         text = text.trim();
         if (text.contains(TAG)) return; // our own (or another SealBot's) reply
 
@@ -130,12 +134,15 @@ public class SealBot {
             return; // not a player message
         }
 
-        if (lastSent.containsKey(user) && System.nanoTime() < lastSent.get(user) + COOLDOWN_NS) return;
+        Map<String, Long> last = isWhisper ? lastWhisper : lastChat;
+        long cooldown = isWhisper ? WHISPER_COOLDOWN_NS : CHAT_COOLDOWN_NS;
+        Long prev = last.get(user);
+        if (prev != null && System.nanoTime() - prev < cooldown) return;
 
         int level = PERMS.map().getOrDefault(user, Permission.NORMAL.ordinal());
-        for (Rule rule : RULES) {
-            if (level < rule.getPerm().ordinal()) continue;
-            List<String> data = rule.check(body);
+
+        if (!enabled){
+            List<String> data = Settings.ON.check(body, new MessageData(body,user,isWhisper));
             if (data != null) {
                 String hash = shortHash(user+body,2);
                 for (String line : data) {
@@ -144,9 +151,39 @@ public class SealBot {
                     if (isWhisper) msg = "/"+WHISPER_CMD+" "+user+" "+msg;
                     outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
                 }
-                lastSent.put(user,System.nanoTime());
+                last.put(user, System.nanoTime());
+            }
+            return;
+        };
+
+        for (Rule rule : RULES) {
+            if (!isWhisper && level < rule.getRuleData().publicChat().ordinal()) continue;
+            if (isWhisper && level < rule.getRuleData().whisper().ordinal()) continue;
+            List<String> data = rule.check(body, new MessageData(body,user,isWhisper));
+            if (data != null) {
+                String hash = shortHash(user+body,2);
+                for (String line : data) {
+                    if (outbox.size() >= MAX_QUEUE) break;
+                    String msg = TAG+" "+hash+" "+suffix+"] "+line;
+                    if (isWhisper) msg = "/"+WHISPER_CMD+" "+user+" "+msg;
+                    outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
+                }
+                last.put(user, System.nanoTime());
                 return; // first matching rule wins
             }
+        }
+    }
+
+    public static void queueMessage(List<String> text, MessageData data){
+        String suffix;
+        if (data.isWhisper()) suffix = "@" + data.user() +  " (whisper)";
+        else suffix = "@" + data.user();
+        String hash = shortHash(data.user()+data.body(),2);
+        for (String line : text) {
+            if (outbox.size() >= MAX_QUEUE) break;
+            String msg = TAG+" "+hash+" "+suffix+"] "+line;
+            if (data.isWhisper()) msg = "/"+WHISPER_CMD+" "+data.user()+" "+msg;
+            outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
         }
     }
 
@@ -159,4 +196,6 @@ public class SealBot {
             throw new IllegalStateException(e);   // SHA-256 is always available
         }
     }
+
+    public static record MessageData(String body, String user, boolean isWhisper){};
 }
