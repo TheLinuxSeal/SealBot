@@ -26,31 +26,34 @@ public class SealBot {
 
     private static final String WHISPER_CMD = "msg";
 
+    public static boolean enabled = true;
+
     public static final PermissionsStorage PERMS = new PermissionsStorage();
 
     // ---- Add your own rules here -------------------------------------------------
     private static final List<Rule> RULES = List.of(
+            Settings.OFF,
+
             Help.HELP,
             Help.HELPSPECIFIC,
             Help.CREDITS,
-
-            Calc.CALC,
-            Echo.ECHO,
 
             Perms.BAN,
             Perms.DEFAULT,
             Perms.ROOT,
             Perms.STAT,
 
-            Answer.LIFE,
-            Answer.ARCHBTW,
+            Calc.CALC,
+            Echo.ECHO,
+            Server.PING,
 
             Roller.FLIP,
             Roller.DICE,
             Roller.DDICE,
             Roller.CARD,
 
-            Server.PING
+            Answer.LIFE,
+            Answer.ARCHBTW
     );
     // ------------------------------------------------------------------------------
 
@@ -99,6 +102,7 @@ public class SealBot {
     }
 
     private void handle(String text) {
+        if (!enabled) return;
         text = text.trim();
         if (text.contains(TAG)) return; // our own (or another SealBot's) reply
 
