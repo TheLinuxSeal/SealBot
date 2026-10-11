@@ -14,4 +14,11 @@ public class Settings {
         Pattern.compile("\\bseal\\s+off\\s*$", Pattern.CASE_INSENSITIVE),
         (Matcher m) -> {SealBot.enabled = false; return List.of("Disabled SealBot");}
     );
+
+    public static final FunctionRule COOLDOWN = new FunctionRule(
+            Permission.NORMAL,
+            Pattern.compile("\\bseal\\s+cooldown\\s*$", Pattern.CASE_INSENSITIVE),
+            (Matcher m) -> {return List.of("Cooldown is "+SealBot.COOLDOWN_NS);}
+    );
+
 }

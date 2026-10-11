@@ -11,10 +11,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HexFormat;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +22,8 @@ public class SealBot {
     private static final String TAG = "[SealBot";
 
     private static final String WHISPER_CMD = "msg";
+
+    public static final long COOLDOWN_NS = 15_000_000_000L;
 
     public static boolean enabled = true;
 
@@ -42,6 +41,8 @@ public class SealBot {
             Perms.DEFAULT,
             Perms.ROOT,
             Perms.STAT,
+
+            Settings.COOLDOWN,
 
             Calc.CALC,
             Echo.ECHO,
@@ -62,6 +63,8 @@ public class SealBot {
     //   Bob whispers to you: message
     private static final Pattern PUBLIC_CHAT = Pattern.compile("^<(\\w{1,16})> (.+)$");
     private static final Pattern WHISPER = Pattern.compile("^(\\w{1,16}) whispers to you: (.+)$");
+
+    private static final Map<String, Long> lastSent = new HashMap<>();
 
     private static final int TICKS_BETWEEN_MESSAGES = 12;   // ~0.6s, avoids spam kicks
     private static final int MAX_QUEUE = 6;                 // drop extra replies instead of spamming
@@ -126,6 +129,9 @@ public class SealBot {
         } else {
             return; // not a player message
         }
+
+        if (lastSent.containsKey(user) && System.nanoTime() < lastSent.get(user) + COOLDOWN_NS) return;
+
         int level = PERMS.map().getOrDefault(user, Permission.NORMAL.ordinal());
         for (Rule rule : RULES) {
             if (level < rule.getPerm().ordinal()) continue;
@@ -138,6 +144,7 @@ public class SealBot {
                     if (isWhisper) msg = "/"+WHISPER_CMD+" "+user+" "+msg;
                     outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
                 }
+                lastSent.put(user,System.nanoTime());
                 return; // first matching rule wins
             }
         }
