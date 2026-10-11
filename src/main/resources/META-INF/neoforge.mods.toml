@@ -1,6 +1,6 @@
 modLoader="javafml"
 loaderVersion="[1,)"
-license="MIT"
+license="GPLv3"
 
 [[mods]]
 modId="sealbot"

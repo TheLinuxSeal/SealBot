@@ -21,8 +21,6 @@ public class SealBot {
     /** Every reply starts with this tag; any incoming message containing it is ignored (loop guard). */
     private static final String TAG = "[SealBot";
 
-    private final static Calc CALC = new Calc();
-
     public static final PermissionsStorage PERMS = new PermissionsStorage();
 
     // ---- Add your own rules here -------------------------------------------------

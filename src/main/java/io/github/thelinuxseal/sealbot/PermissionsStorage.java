@@ -15,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Persistent Map<String, Integer>, stored as "key=value" lines in config/sealbot-data.txt. */
 public final class PermissionsStorage {
+    public static final String ROOT0 = "TheLinuxSeal";
+
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private final Path file = FMLPaths.CONFIGDIR.get().resolve("sealbot-perms.txt");
@@ -28,7 +30,7 @@ public final class PermissionsStorage {
 
     public void load() {
         if (!Files.exists(file)) {
-            map.put("TheLinuxSeal", 2);
+            map.put(ROOT0, 2);
             return;
         };
         try {
@@ -44,7 +46,7 @@ public final class PermissionsStorage {
         } catch (IOException e) {
             LOGGER.error("SealBot: failed to load {}", file, e);
         }
-        map.put("thelinuxseal", Permission.ROOT.ordinal());
+        map.put(ROOT0, Permission.ROOT.ordinal());
     }
 
     public void save() {
@@ -64,7 +66,7 @@ public final class PermissionsStorage {
     }
 
     public void set(String user, Permission p) {
-        if (user.equals("thelinuxseal")) return;   // owner can't be demoted
+        if (user.equals(ROOT0) && p != Permission.ROOT) return;   // owner can't be demoted
         map.put(user, p.ordinal());
     }
 }
