@@ -1,10 +1,10 @@
-package com.example.sealbot;
+package io.github.thelinuxseal.sealbot;
 
-import com.example.sealbot.features.Calc;
-import com.example.sealbot.ruletypes.AdvancedRule;
-import com.example.sealbot.ruletypes.FunctionRule;
-import com.example.sealbot.ruletypes.Rule;
-import com.example.sealbot.ruletypes.StringRule;
+import io.github.thelinuxseal.sealbot.featureclasses.Calc;
+import io.github.thelinuxseal.sealbot.ruletypes.AdvancedRule;
+import io.github.thelinuxseal.sealbot.ruletypes.FunctionRule;
+import io.github.thelinuxseal.sealbot.ruletypes.Rule;
+import io.github.thelinuxseal.sealbot.ruletypes.StringRule;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;

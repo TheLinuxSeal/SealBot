@@ -1,4 +1,4 @@
-package com.example.sealbot;
+package io.github.thelinuxseal.sealbot;
 
 import java.util.List;
 import java.util.regex.Matcher;

@@ -1,4 +1,4 @@
-package com.example.sealbot;
+package io.github.thelinuxseal.sealbot;
 
 import com.mojang.logging.LogUtils;
 import net.neoforged.fml.loading.FMLPaths;
@@ -10,7 +10,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

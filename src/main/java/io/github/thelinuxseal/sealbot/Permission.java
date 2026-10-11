@@ -1,4 +1,4 @@
-package com.example.sealbot;
+package io.github.thelinuxseal.sealbot;
 
 public enum Permission {
     BANNED,

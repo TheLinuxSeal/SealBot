@@ -1,6 +1,6 @@
-package com.example.sealbot.features;
+package io.github.thelinuxseal.sealbot.featureclasses;
 
-import com.example.sealbot.Feature;
+import io.github.thelinuxseal.sealbot.Feature;
 import com.ezylang.evalex.Expression;
 import com.ezylang.evalex.config.ExpressionConfiguration;
 

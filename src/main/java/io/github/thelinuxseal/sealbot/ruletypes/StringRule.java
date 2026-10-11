@@ -1,6 +1,6 @@
-package com.example.sealbot.ruletypes;
+package io.github.thelinuxseal.sealbot.ruletypes;
 
-import com.example.sealbot.Permission;
+import io.github.thelinuxseal.sealbot.Permission;
 
 import java.util.List;
 import java.util.regex.Matcher;
