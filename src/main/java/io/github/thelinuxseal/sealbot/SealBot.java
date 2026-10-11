@@ -37,7 +37,14 @@ public class SealBot {
             Perms.STAT,
 
             Answer.LIFE,
-            Answer.ARCHBTW
+            Answer.ARCHBTW,
+
+            Roller.FLIP,
+            Roller.DICE,
+            Roller.DDICE,
+            Roller.CARD,
+
+            Server.PING
     );
     // ------------------------------------------------------------------------------
 

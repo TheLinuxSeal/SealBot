@@ -15,10 +15,10 @@ import java.util.regex.Pattern;
 
 public class Calc {
     public static final FunctionRule CALC = new FunctionRule(
-            Permission.NORMAL,
-            Pattern.compile("\\bseal\\s+calc\\s+(.+)$", Pattern.CASE_INSENSITIVE),
-            Calc::trigger
-        );
+        Permission.NORMAL,
+        Pattern.compile("\\bseal\\s+calc\\s+(.+)$", Pattern.CASE_INSENSITIVE),
+        Calc::trigger
+    );
 
 
     private static final MathContext CALC_MC = new MathContext(40, RoundingMode.HALF_UP); // internal precision
