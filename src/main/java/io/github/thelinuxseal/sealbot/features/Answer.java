@@ -16,6 +16,6 @@ public class Answer {
     public static final StringRule ARCHBTW = new StringRule(
         Permission.NORMAL,
         Pattern.compile(".*btw.*", Pattern.CASE_INSENSITIVE),
-        List.of("I use arch btw!")
+        List.of("\"btw\" HOLY ARCH LINUX REFERENCE")
     );
 }

@@ -9,8 +9,11 @@ import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,11 +24,14 @@ public class SealBot {
     /** Every reply starts with this tag; any incoming message containing it is ignored (loop guard). */
     private static final String TAG = "[SealBot";
 
+    private static final String WHISPER_CMD = "msg";
+
     public static final PermissionsStorage PERMS = new PermissionsStorage();
 
     // ---- Add your own rules here -------------------------------------------------
     private static final List<Rule> RULES = List.of(
             Help.HELP,
+            Help.HELPSPECIFIC,
             Help.CREDITS,
 
             Calc.CALC,
@@ -86,7 +92,8 @@ public class SealBot {
         }
         String next = outbox.poll();
         if (next != null) {
-            mc.player.connection.sendChat(next);
+            if (next.startsWith("/")) mc.player.connection.sendCommand(next.substring(1));
+            else mc.player.connection.sendChat(next);
             delay = TICKS_BETWEEN_MESSAGES;
         }
     }
@@ -100,33 +107,45 @@ public class SealBot {
 
         String user;
         String body;
-        String prefix;
+        String suffix;
+        boolean isWhisper;
         if (chat.matches()) {
             user = chat.group(1);
             body = chat.group(2);
-            prefix = TAG + " @" + user + "] ";
+            suffix = "@" + user;
+            isWhisper = false;
         } else if (whisper.matches()) {
             user = whisper.group(1);
             body = whisper.group(2);
-            prefix = TAG + " @" + user +  " '" + body + "'] ";
+            suffix = "@" + user +  " (whisper)";
+            isWhisper = true;
         } else {
             return; // not a player message
         }
-
-
-
+        int level = PERMS.map().getOrDefault(user, Permission.NORMAL.ordinal());
         for (Rule rule : RULES) {
-            int level = PERMS.map().getOrDefault(user, Permission.NORMAL.ordinal());
             if (level < rule.getPerm().ordinal()) continue;
             List<String> data = rule.check(body);
             if (data != null) {
-            for (String line : data) {
+                String hash = shortHash(user+body,2);
+                for (String line : data) {
                     if (outbox.size() >= MAX_QUEUE) break;
-                    String msg = prefix + line;
+                    String msg = TAG+" "+hash+" "+suffix+"] "+line;
+                    if (isWhisper) msg = "/"+WHISPER_CMD+" "+user+" "+msg;
                     outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
                 }
                 return; // first matching rule wins
             }
+        }
+    }
+
+
+    private static String shortHash(String input, int bytes) {   // bytes=2 -> 4 hex chars, bytes=4 -> 8
+        try {
+            byte[] d = MessageDigest.getInstance("SHA-256").digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(d, 0, bytes);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);   // SHA-256 is always available
         }
     }
 }
