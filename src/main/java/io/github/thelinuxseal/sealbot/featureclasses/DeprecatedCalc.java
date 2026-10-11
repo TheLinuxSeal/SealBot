@@ -17,7 +17,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 
 /** Arbitrary-range math via EvalEx (BigDecimal): handles things like 10^400 or 1e-500. */
-public final class Calc implements Feature {
+@Deprecated
+public final class DeprecatedCalc implements Feature {
 
     private static final MathContext CALC_MC = new MathContext(40, RoundingMode.HALF_UP); // internal precision
     private static final MathContext SHOW_MC = new MathContext(15, RoundingMode.HALF_UP); // digits shown in chat

@@ -1,10 +1,7 @@
 package io.github.thelinuxseal.sealbot;
 
-import io.github.thelinuxseal.sealbot.featureclasses.Calc;
-import io.github.thelinuxseal.sealbot.ruletypes.AdvancedRule;
-import io.github.thelinuxseal.sealbot.ruletypes.FunctionRule;
+import io.github.thelinuxseal.sealbot.features.*;
 import io.github.thelinuxseal.sealbot.ruletypes.Rule;
-import io.github.thelinuxseal.sealbot.ruletypes.StringRule;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
@@ -30,75 +27,19 @@ public class SealBot {
 
     // ---- Add your own rules here -------------------------------------------------
     private static final List<Rule> RULES = List.of(
-            new AdvancedRule(Permission.NORMAL, Pattern.compile("\\bseal\\s+calc\\s+(.+)$", Pattern.CASE_INSENSITIVE), CALC),
-            new StringRule(
-                    Permission.NORMAL,
-                    Pattern.compile("\\bseal\\s+(?:help|list)\\s*$", Pattern.CASE_INSENSITIVE),
-                    List.of(
-                            "seal help -> prints this",
-                            "seal calc <expr> -> evaluates <expr> with EvalEx",
-                            "seal credits -> prints credits"
-                    )
-            ),
-            new StringRule(
-                    Permission.NORMAL,
-                    Pattern.compile("\\bseal\\s+credits\\s*$", Pattern.CASE_INSENSITIVE),
-                    List.of(
-                            "TheLinuxSeal - SealBot",
-                            "Ezylang - EvalEx"
-                    )
-            ),
-            new StringRule(
-                    Permission.NORMAL,
-                    Pattern.compile("\\bseal\\s+answer\\b.*\\blife\\b", Pattern.CASE_INSENSITIVE),
-                    List.of("42")
-            ),
-            new FunctionRule(
-                    Permission.NORMAL,
-                    Pattern.compile("\\bseal\\s+echo\\s+(.+)$", Pattern.CASE_INSENSITIVE),
-                    (Matcher m) -> List.of(m.group(1))
-            ),
-            new FunctionRule(
-                    Permission.ROOT,
-                    Pattern.compile("\\bseal\\s+perm\\s+ban\\s+(.+)$", Pattern.CASE_INSENSITIVE),
-                    (Matcher m) -> {
-                        PERMS.map().put(m.group(1),Permission.BANNED.ordinal());
-                        return List.of("Banned "+m.group(1));
-                    }
-            ),
-            new FunctionRule(
-                    Permission.ROOT,
-                    Pattern.compile("\\bseal\\s+perm\\s+default\\s+(.+)$", Pattern.CASE_INSENSITIVE),
-                    (Matcher m) -> {
-                        PERMS.map().put(m.group(1),Permission.NORMAL.ordinal());
-                        return List.of("Defaulted "+m.group(1));
-                    }
-            ),
-            new FunctionRule(
-                    Permission.ROOT,
-                    Pattern.compile("\\bseal\\s+perm\\s+root\\s+(.+)$", Pattern.CASE_INSENSITIVE),
-                    (Matcher m) -> {
-                        PERMS.map().put(m.group(1),Permission.ROOT.ordinal());
-                        return List.of("Rooted "+m.group(1));
-                    }
-            ),
-            new FunctionRule(
-                    Permission.BANNED,
-                    Pattern.compile("\\bseal\\s+perm\\s+stat\\s+(.+)$", Pattern.CASE_INSENSITIVE),
-                    (Matcher m) -> {
+            Help.HELP,
+            Help.CREDITS,
 
-                        //PERMS.map().put(m.group(1),Permission.ROOT.ordinal())
-                        int x = PERMS.map().getOrDefault(m.group(1), Permission.NORMAL.ordinal());
-                        if (x == 2) return List.of(m.group(1)+" is Root");
-                        if (x == 0) return List.of(m.group(1)+" is Banned");
-                        else return List.of(m.group(1)+" is Default");
-                    }
-            ),
-            new StringRule(
-                    Permission.NORMAL,
-                    Pattern.compile(".*btw.*", Pattern.CASE_INSENSITIVE),
-                    List.of("I use arch btw!")
-            )
+            Calc.CALC,
+            Echo.ECHO,
+
+            Perms.BAN,
+            Perms.DEFAULT,
+            Perms.ROOT,
+            Perms.STAT,
+
+            Answer.LIFE,
+            Answer.ARCHBTW
     );
     // ------------------------------------------------------------------------------
 
