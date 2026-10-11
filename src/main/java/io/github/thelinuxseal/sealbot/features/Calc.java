@@ -14,11 +14,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Calc {
-    public static final Calc me = new Calc();
     public static final FunctionRule CALC = new FunctionRule(
             Permission.NORMAL,
             Pattern.compile("\\bseal\\s+calc\\s+(.+)$", Pattern.CASE_INSENSITIVE),
-            me::trigger
+            Calc::trigger
         );
 
 
@@ -36,7 +35,7 @@ public class Calc {
         return t;
     });
 
-    public List<String> trigger(Matcher m) {
+    public static List<String> trigger(Matcher m) {
         return List.of(safeEval(m.group(1)));
     }
 
