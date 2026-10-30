@@ -1,12 +1,12 @@
 package io.github.thelinuxseal.sealbot.rule;
 
-import io.github.thelinuxseal.sealbot.SealBot;
+import io.github.thelinuxseal.sealbot.MessageData;
 
 import java.util.List;
 
 public interface Rule {
 
-    public List<String> check(String msg, SealBot.MessageData data);
+    public List<String> check(MessageData data);
 
     RuleData getRuleData();
 }

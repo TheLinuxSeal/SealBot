@@ -1,16 +1,23 @@
 package io.github.thelinuxseal.sealbot;
 
+import io.github.thelinuxseal.sealbot.chatpatterns.Discord;
+import io.github.thelinuxseal.sealbot.chatpatterns.PublicChat;
+import io.github.thelinuxseal.sealbot.chatpatterns.Whisper;
 import io.github.thelinuxseal.sealbot.features.*;
+import io.github.thelinuxseal.sealbot.perms.Permission;
+import io.github.thelinuxseal.sealbot.perms.PermissionsStorage;
+import io.github.thelinuxseal.sealbot.rule.ChatPattern;
+import io.github.thelinuxseal.sealbot.rule.CooldownGroup;
 import io.github.thelinuxseal.sealbot.rule.Rule;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.StringUtil;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,45 +26,55 @@ import java.util.regex.Pattern;
 public class SealBot {
 
     /** Every reply starts with this tag; any incoming message containing it is ignored (loop guard). */
-    private static final String TAG = "[SealBot";
+    public static final String TAG = "[SealBot {0} {1}] {2}";
+    //private static final Pattern TAG_PATTERN = Pattern.compile("\\[SealBot [^\\]]+\\] ", Pattern.CASE_INSENSITIVE);
 
-    private static final String WHISPER_CMD = "msg";
-
-    public static final long CHAT_COOLDOWN_NS = 45_000_000_000L;
-    public static final long WHISPER_COOLDOWN_NS = 5_000_000_000L;
+    public static final CooldownGroup MAIN_COOLDOWN_GROUP = new CooldownGroup();
 
     public static boolean enabled = true;
 
     public static final PermissionsStorage PERMS = new PermissionsStorage();
 
+    public static final ChatPattern PUBLIC_CHAT = new PublicChat();
+    public static final ChatPattern DISCORD = new Discord();
+    public static final ChatPattern WHISPER = new Whisper();
+
+    public static final List<ChatPattern> PATTERNS = List.of(
+        PUBLIC_CHAT,
+        DISCORD,
+        WHISPER
+    );
+
     // ---- Add your own rules here -------------------------------------------------
-    private static final List<Rule> RULES = List.of(
+    public static final List<Rule> RULES = List.of(
             Settings.OFF,
             Settings.ON,
 
             Help.HELP,
             Help.HELPSPECIFIC,
             Help.CREDITS,
+            Help.SOURCE,
 
-            Perms.BAN,
-            Perms.DEFAULT,
-            Perms.ROOT,
+            Perms.SET_BAN,
+            Perms.SET_DEFAULT,
+            Perms.SET_ROOT,
             Perms.STAT,
 
-            Settings.COOLDOWN,
+            //Settings.COOLDOWN,
 
             Calc.CALC,
             Echo.ECHO,
             Server.PING,
-
-            Chatbot.CHATBOT,
+            UnitConvert.CONVERT,
 
             Roller.FLIP,
             Roller.DICE,
             Roller.DDICE,
             Roller.CARD,
 
-            Answer.LIFE
+            Answer.LIFE,
+
+            Chatbot.CHATBOT
             //Answer.ARCHBTW
     );
     // ------------------------------------------------------------------------------
@@ -65,11 +82,7 @@ public class SealBot {
     // Only these two message shapes are accepted:
     //   <Bob> message
     //   Bob whispers to you: message
-    private static final Pattern PUBLIC_CHAT = Pattern.compile("^<(\\w{1,16})> (.+)$");
-    private static final Pattern WHISPER = Pattern.compile("^(\\w{1,16}) whispers to you: (.+)$");
 
-    private static final Map<String, Long> lastChat = new HashMap<>();
-    private static final Map<String, Long> lastWhisper = new HashMap<>();
 
     private static final int TICKS_BETWEEN_MESSAGES = 12;   // ~0.6s, avoids spam kicks
     private static final int MAX_QUEUE = 6;                 // drop extra replies instead of spamming
@@ -103,6 +116,12 @@ public class SealBot {
         }
         String next = outbox.poll();
         if (next != null) {
+            StringBuilder sb = new StringBuilder(next.length());
+            for (int i = 0; i < next.length(); i++) {
+                char c = next.charAt(i);
+                sb.append(StringUtil.isAllowedChatCharacter(c) ? c : '?');
+            }
+            next = sb.toString();
             if (next.startsWith("/")) mc.player.connection.sendCommand(next.substring(1));
             else mc.player.connection.sendChat(next);
             delay = TICKS_BETWEEN_MESSAGES;
@@ -111,91 +130,46 @@ public class SealBot {
 
     private void handle(String text) {
         text = text.trim();
-        if (text.contains(TAG)) return; // our own (or another SealBot's) reply
+        if (text.contains("[SealBot")) return; // our own (or another SealBot's) reply
 
-        Matcher chat = PUBLIC_CHAT.matcher(text);
-        Matcher whisper = WHISPER.matcher(text);
+        Matcher m;
+        for (ChatPattern pattern : PATTERNS) {
+            m = pattern.getPattern().matcher(text);
+            if (m.matches()) {
+                MessageData data = pattern.getData(m);
 
-        String user;
-        String body;
-        String suffix;
-        boolean isWhisper;
-        if (chat.matches()) {
-            user = chat.group(1);
-            body = chat.group(2);
-            suffix = "@" + user;
-            isWhisper = false;
-        } else if (whisper.matches()) {
-            user = whisper.group(1);
-            body = whisper.group(2);
-            suffix = "@" + user +  " (whisper)";
-            isWhisper = true;
-        } else {
-            return; // not a player message
-        }
+                int level = PERMS.map().getOrDefault(data.user(), Permission.NORMAL.ordinal());
 
-        Map<String, Long> last = isWhisper ? lastWhisper : lastChat;
-        long cooldown = isWhisper ? WHISPER_COOLDOWN_NS : CHAT_COOLDOWN_NS;
-        Long prev = last.get(user);
-        if (prev != null && System.nanoTime() - prev < cooldown) return;
+                //System.out.println(data);
 
-        int level = PERMS.map().getOrDefault(user, Permission.NORMAL.ordinal());
+                for (Rule rule : RULES) {
+                    if (!enabled && rule != Settings.ON) continue;
+                    if (rule.getRuleData().patternData().getFirst(pattern).ordinal()>level) continue;
+                    if (!rule.getRuleData().group().isOver(data.user())) continue;
+                    //System.out.println("a");
+                    List<String> result = rule.check(data);
 
-        if (!enabled){
-            List<String> data = Settings.ON.check(body, new MessageData(body,user,isWhisper));
-            if (data != null) {
-                String hash = shortHash(user+body,2);
-                for (String line : data) {
-                    if (outbox.size() >= MAX_QUEUE) break;
-                    String msg = TAG+" "+hash+" "+suffix+"] "+line;
-                    if (isWhisper) msg = "/"+WHISPER_CMD+" "+user+" "+msg;
-                    outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
+                    if (result != null) {
+                        queueMessage(result,data);
+
+                        rule.getRuleData().group().setCooldown(data.user(),rule.getRuleData().patternData().getSecond(data.pattern()));
+                    }
                 }
-                last.put(user, System.nanoTime());
-            }
-            return;
-        };
-
-        for (Rule rule : RULES) {
-            if (!isWhisper && level < rule.getRuleData().publicChat().ordinal()) continue;
-            if (isWhisper && level < rule.getRuleData().whisper().ordinal()) continue;
-            List<String> data = rule.check(body, new MessageData(body,user,isWhisper));
-            if (data != null) {
-                String hash = shortHash(user+body,2);
-                for (String line : data) {
-                    if (outbox.size() >= MAX_QUEUE) break;
-                    String msg = TAG+" "+hash+" "+suffix+"] "+line;
-                    if (isWhisper) msg = "/"+WHISPER_CMD+" "+user+" "+msg;
-                    outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
-                }
-                last.put(user, System.nanoTime());
-                return; // first matching rule wins
+                return;
             }
         }
     }
 
-    public static void queueMessage(List<String> text, MessageData data){
-        String suffix;
-        if (data.isWhisper()) suffix = "@" + data.user() +  " (whisper)";
-        else suffix = "@" + data.user();
-        String hash = shortHash(data.user()+data.body(),2);
-        for (String line : text) {
-            if (outbox.size() >= MAX_QUEUE) break;
-            String msg = TAG+" "+hash+" "+suffix+"] "+line;
-            if (data.isWhisper()) msg = "/"+WHISPER_CMD+" "+data.user()+" "+msg;
-            outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
+    public static void queueMessage(List<String> result, MessageData data){
+        //System.out.println(result);
+        if (result != null) {
+            //System.out.println(result);
+            for (String line : result) {
+                if (outbox.size() >= MAX_QUEUE) break;
+                String msg = data.pattern().format(data, line);
+                outbox.add(msg.length() > MAX_LEN ? msg.substring(0, MAX_LEN) : msg);
+            }
         }
     }
 
-
-    private static String shortHash(String input, int bytes) {   // bytes=2 -> 4 hex chars, bytes=4 -> 8
-        try {
-            byte[] d = MessageDigest.getInstance("SHA-256").digest(input.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(d, 0, bytes);
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);   // SHA-256 is always available
-        }
-    }
-
-    public static record MessageData(String body, String user, boolean isWhisper){};
 }

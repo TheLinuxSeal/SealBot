@@ -1,4 +1,4 @@
-package io.github.thelinuxseal.sealbot;
+package io.github.thelinuxseal.sealbot.perms;
 
 import com.mojang.logging.LogUtils;
 import net.neoforged.fml.loading.FMLPaths;
@@ -15,11 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Persistent Map<String, Integer>, stored as "key=value" lines in config/sealbot-data.txt. */
 public final class PermissionsStorage {
+
     public static final String ROOT0 = "TheLinuxSeal";
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private final Path file = FMLPaths.CONFIGDIR.get().resolve("sealbot-perms.txt");
+    private final Path file = FMLPaths.CONFIGDIR.get().resolve("sealbot-perms-v2.txt");
 
     // Concurrent because the save hook runs on a different thread than the game.
     private final Map<String, Integer> map = new ConcurrentHashMap<>();
@@ -30,7 +31,7 @@ public final class PermissionsStorage {
 
     public void load() {
         if (!Files.exists(file)) {
-            map.put(ROOT0, 2);
+            map.put(ROOT0, Permission.ROOT.ordinal());
             return;
         };
         try {

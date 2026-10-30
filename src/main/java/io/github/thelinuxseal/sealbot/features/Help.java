@@ -1,6 +1,8 @@
 package io.github.thelinuxseal.sealbot.features;
 
-import io.github.thelinuxseal.sealbot.Permission;
+import io.github.thelinuxseal.sealbot.perms.Permission;
+import io.github.thelinuxseal.sealbot.rule.RuleData;
+import io.github.thelinuxseal.sealbot.rule.TriMap;
 import io.github.thelinuxseal.sealbot.ruletypes.FunctionRule;
 import io.github.thelinuxseal.sealbot.ruletypes.StringRule;
 
@@ -10,6 +12,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static io.github.thelinuxseal.sealbot.SealBot.*;
+import static io.github.thelinuxseal.sealbot.SealBot.WHISPER;
+import static io.github.thelinuxseal.sealbot.perms.Permission.NORMAL;
 
 public class Help {
 
@@ -23,27 +29,43 @@ public class Help {
         TOPICS.put("perm stat",  List.of("perm stat <username> - prints the permission status of <username>"));
         TOPICS.put("flip",       List.of("flip - flips a coin"));
         TOPICS.put("dice",       List.of("dice - rolls a die"));
-        TOPICS.put("ddice",      List.of("ddice - rolls 2 dice"));
-        TOPICS.put("doubledice", List.of("doubledice - rolls 2 dice"));
         TOPICS.put("2dice",      List.of("2dice - rolls 2 dice"));
         TOPICS.put("ping",       List.of("ping <username> - prints the ping of <username>"));
         TOPICS.put("answer",     List.of("answer <question> - answers <question>"));
     }
 
     public static final StringRule HELP =  new StringRule(
-        Permission.NORMAL,
+        new RuleData(
+            TriMap.of(
+                PUBLIC_CHAT, NORMAL, PUBLIC_CHAT.getCooldown(),
+                DISCORD, NORMAL, DISCORD.getCooldown(),
+                WHISPER, NORMAL, WHISPER.getCooldown()
+            )
+        ),
         Pattern.compile("\\bseal\\s+(?:help|list)\\s*$", Pattern.CASE_INSENSITIVE),
         List.of("Available commands: "+String.join(", ",TOPICS.keySet()))
     );
 
     public static final FunctionRule HELPSPECIFIC =  new FunctionRule(
-        Permission.NORMAL,
+        new RuleData(
+            TriMap.of(
+                PUBLIC_CHAT, NORMAL, PUBLIC_CHAT.getCooldown(),
+                DISCORD, NORMAL, DISCORD.getCooldown(),
+                WHISPER, NORMAL, WHISPER.getCooldown()
+            )
+        ),
         Pattern.compile("\\bseal\\s+help\\s+(.*)\\s*$", Pattern.CASE_INSENSITIVE),
         (Matcher m) -> getHelpAbout(m.group(1))
     );
 
     public static final StringRule CREDITS = new StringRule(
-        Permission.NORMAL,
+        new RuleData(
+            TriMap.of(
+                PUBLIC_CHAT, NORMAL, PUBLIC_CHAT.getCooldown(),
+                DISCORD, NORMAL, DISCORD.getCooldown(),
+                WHISPER, NORMAL, WHISPER.getCooldown()
+            )
+        ),
         Pattern.compile("\\bseal\\s+credits\\s*$", Pattern.CASE_INSENSITIVE),
         List.of(
             "TheLinuxSeal - SealBot",
@@ -52,6 +74,18 @@ public class Help {
             "The ggml authors - llama.cpp",
             "Alibaba Cloud - Qwen2.5-0.5B-Instruct"
         )
+    );
+
+    public static final StringRule SOURCE = new StringRule(
+        new RuleData(
+            TriMap.of(
+                PUBLIC_CHAT, NORMAL, PUBLIC_CHAT.getCooldown(),
+                DISCORD, NORMAL, DISCORD.getCooldown(),
+                WHISPER, NORMAL, WHISPER.getCooldown()
+            )
+        ),
+        Pattern.compile("\\bseal\\s+source\\s*$", Pattern.CASE_INSENSITIVE),
+        List.of("github.com/TheLinuxSeal/SealBot")
     );
 
 
